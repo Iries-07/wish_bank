@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wish Bank</title>
+<style>
+  :root{
+    --bg:#FFFFFF;
+    --text:#1A1A1A;
+    --gray:#8A8A8A;
+    --light:#F5F5F5;
+    --line:#E8E8E8;
+    --red:#C0392B;
+    --sans:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.55;
+    min-height:100vh;
+    padding:24px 16px 64px;
+  }
+  .wrap{max-width:520px;margin:0 auto}
+
+  header{padding:8px 0 4px}
+  .app-name{font-size:13px;letter-spacing:.12em;color:var(--gray);font-weight:500}
+  .balance{
+    font-size:56px;font-weight:600;line-height:1.15;
+    font-variant-numeric:tabular-nums;letter-spacing:-.02em;
+  }
+  .balance small{font-size:18px;font-weight:400;color:var(--gray);margin-left:2px}
+  .goal-line{font-size:13px;color:var(--gray);margin-top:2px;min-height:20px}
+  .goal-line b{color:var(--text);font-weight:500}
+  .bar{margin-top:10px;height:4px;border-radius:2px;background:var(--light);overflow:hidden}
+  .bar > i{display:block;height:100%;background:var(--text);transition:width .4s ease}
+  @media (prefers-reduced-motion:reduce){ .bar > i{transition:none} }
+
+  section{margin-top:32px}
+  .sec-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+  .sec-head h2{font-size:13px;font-weight:600;color:var(--text)}
+  .sec-head .date{font-size:12px;color:var(--gray)}
+  .ghost-btn{
+    background:none;border:none;color:var(--gray);
+    font-size:12px;padding:2px 0;cursor:pointer;font-family:var(--sans);
+  }
+  .ghost-btn:hover{color:var(--text)}
+  .ghost-btn:focus-visible,button:focus-visible,input:focus-visible{
+    outline:2px solid var(--text);outline-offset:2px;
+  }
+
+  .card{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .task{
+    display:flex;align-items:center;gap:12px;
+    padding:13px 14px;border-bottom:1px solid var(--line);
+  }
+  .task:last-child{border-bottom:none}
+  .task input[type=checkbox]{
+    appearance:none;-webkit-appearance:none;flex:none;
+    width:21px;height:21px;border-radius:6px;
+    border:1.5px solid #C9C9C9;background:transparent;
+    cursor:pointer;position:relative;
+  }
+  .task input[type=checkbox]:checked{background:var(--text);border-color:var(--text)}
+  .task input[type=checkbox]:checked::after{
+    content:"✓";position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:13px;font-weight:700;
+  }
+  .task .t-name{flex:1;min-width:0}
+  .task.done .t-name{color:var(--gray);text-decoration:line-through}
+  .pts{flex:none;font-weight:600;font-size:14px;font-variant-numeric:tabular-nums}
+  .del-btn{
+    flex:none;background:none;border:none;color:var(--gray);
+    font-size:15px;cursor:pointer;padding:4px 8px;line-height:1;
+  }
+  .del-btn:hover{color:var(--red)}
+  .empty{padding:18px 14px;color:#B5B5B5;font-size:13px}
+
+  .add-row{display:flex;gap:8px;margin-top:10px;align-items:center}
+  .add-row input[type=text],.add-row input[type=number]{
+    background:var(--bg);border:1px solid var(--line);color:var(--text);
+    border-radius:10px;padding:9px 12px;font-size:14px;font-family:var(--sans);min-width:0;
+  }
+  .add-row input::placeholder{color:#B5B5B5}
+  .add-row .in-name{flex:1}
+  .add-row .in-num{width:72px;text-align:center}
+  .add-row button.primary{
+    flex:none;background:var(--text);color:#fff;border:none;
+    border-radius:10px;padding:9px 16px;font-size:14px;font-weight:500;
+    cursor:pointer;font-family:var(--sans);
+  }
+  .img-pick{
+    flex:none;width:38px;height:38px;border-radius:10px;
+    border:1px dashed #C9C9C9;background:none;cursor:pointer;
+    color:#B5B5B5;font-size:16px;line-height:1;overflow:hidden;padding:0;
+  }
+  .img-pick img{width:100%;height:100%;object-fit:cover;display:block}
+
+  .wish{
+    display:flex;align-items:center;gap:12px;
+    padding:12px 14px;border-bottom:1px solid var(--line);
+  }
+  .wish:last-child{border-bottom:none}
+  .w-thumb{
+    flex:none;width:46px;height:46px;border-radius:10px;overflow:hidden;
+    border:none;padding:0;cursor:pointer;background:var(--light);
+  }
+  .w-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .w-thumb.placeholder{
+    border:1px dashed #D5D5D5;background:none;color:#C9C9C9;font-size:15px;
+  }
+  .wish .w-body{flex:1;min-width:0}
+  .wish .w-name{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .wish .w-sub{font-size:12px;color:var(--gray);margin-top:2px}
+  .redeem-btn{
+    flex:none;border:none;border-radius:9px;padding:7px 14px;
+    font-size:13px;font-weight:500;cursor:pointer;font-family:var(--sans);
+  }
+  .redeem-btn.ready{background:var(--text);color:#fff}
+  .redeem-btn.locked{background:var(--light);color:var(--gray);cursor:default}
+  .wish.redeemed .w-name{color:var(--gray);text-decoration:line-through}
+  .wish.redeemed .w-thumb{opacity:.5}
+  .tag-done{flex:none;font-size:12px;color:var(--gray)}
+
+  .log{
+    display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    padding:9px 14px;border-bottom:1px solid var(--line);font-size:13px;
+  }
+  .log:last-child{border-bottom:none}
+  .log .l-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .log .l-date{color:#B5B5B5;flex:none;font-size:12px}
+  .log .l-delta{flex:none;font-weight:600;font-size:13px;font-variant-numeric:tabular-nums}
+  .l-delta.minus{color:var(--red)}
+
+  .hint{font-size:12px;color:#B5B5B5;margin-top:8px;line-height:1.6}
+  .footer-row{display:flex;gap:16px;margin-top:32px;justify-content:center}
+  .toast{
+    position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(8px);
+    background:var(--text);color:#fff;font-size:13px;font-weight:500;
+    padding:9px 18px;border-radius:22px;opacity:0;pointer-events:none;
+    transition:opacity .25s,transform .25s;max-width:88vw;text-align:center;z-index:99;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media (prefers-reduced-motion:reduce){ .toast{transition:none} }
+  .banner{
+    background:#FFF8E6;border:1px solid #E8D9A8;color:#8A6D1F;
+    font-size:13px;border-radius:10px;padding:10px 14px;margin-bottom:14px;
+    display:none;line-height:1.6;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="banner" id="storageBanner"></div>
+
+  <header>
+    <div class="app-name">WISH BANK</div>
+    <div class="balance"><span id="balanceNum">0</span><small>点</small></div>
+    <div class="goal-line" id="goalLine"></div>
+    <div class="bar" id="goalBar" hidden><i id="goalFill" style="width:0%"></i></div>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <h2>今日任务</h2>
+      <span class="date" id="todayLabel"></span>
+    </div>
+    <div class="card" id="taskList"></div>
+    <div class="sec-head" style="margin-top:10px;margin-bottom:0">
+      <button class="ghost-btn" id="toggleTaskEdit">编辑任务</button>
+    </div>
+    <div class="add-row" id="taskAddRow" hidden>
+      <input type="text" class="in-name" id="newTaskName" placeholder="任务名称" maxlength="30">
+      <input type="number" class="in-num" id="newTaskPts" min="1" max="99" placeholder="点数">
+      <button class="primary" id="addTaskBtn">添加</button>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>心愿单</h2>
+    </div>
+    <div class="card" id="wishList"></div>
+    <div class="add-row">
+      <button class="img-pick" id="newWishImgBtn" aria-label="选择图片">+</button>
+      <input type="text" class="in-name" id="newWishName" placeholder="心愿" maxlength="40">
+      <input type="number" class="in-num" id="newWishCost" min="1" max="9999" placeholder="点数">
+      <button class="primary" id="addWishBtn">添加</button>
+    </div>
+    <p class="hint">点数攒够后才能兑换，不能赊账。点心愿左侧方块可以添加或更换图片。</p>
+    <input type="file" id="wishImgFile" accept="image/*" hidden>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>记录</h2>
+    </div>
+    <div class="card" id="logList"></div>
+  </section>
+
+  <div class="footer-row">
+    <button class="ghost-btn" id="exportBtn">导出备份</button>
+    <button class="ghost-btn" id="importBtn">导入备份</button>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  var KEY = "star-bank-v1";
+
+  var DEFAULT = {
+    tasks: [
+      {id:"t1", name:"PPSA 一章闭卷输出（编译通过）", points:10},
+      {id:"t2", name:"英文日记一篇", points:3},
+      {id:"t3", name:"早起达标", points:1},
+      {id:"t4", name:"颈部晨间运动", points:1}
+    ],
+    done: {},
+    wishlist: [],
+    ledger: []
+  };
+
+  var state = null;
+
+  /* ---------- 存储适配层 ---------- */
+  var backend = "memory";
+
+  async function detectBackend(){
+    if (typeof window.storage === "object" && window.storage && typeof window.storage.set === "function"){
+      try{
+        await window.storage.set(KEY + "-ping", "1");
+        backend = "artifact";
+        return;
+      }catch(e){}
+    }
+    try{
+      var t = "__wb_test__";
+      localStorage.setItem(t, "1");
+      localStorage.removeItem(t);
+      backend = "local";
+      return;
+    }catch(e){}
+    backend = "memory";
+  }
+
+  async function rawGet(){
+    if (backend === "artifact"){
+      try{
+        var r = await window.storage.get(KEY);
+        return r && r.value ? r.value : null;
+      }catch(e){ return null; }
+    }
+    if (backend === "local"){
+      return localStorage.getItem(KEY);
+    }
+    return null;
+  }
+
+  async function rawSet(json){
+    if (backend === "artifact"){ await window.storage.set(KEY, json); return; }
+    if (backend === "local"){ localStorage.setItem(KEY, json); return; }
+    throw new Error("no storage");
+  }
+
+  function showBanner(msg){
+    var b = document.getElementById("storageBanner");
+    b.textContent = msg;
+    b.style.display = "block";
+  }
+
+  /* ---------- 工具 ---------- */
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+  function todayKey(){
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  }
+  function fmtDate(ts){
+    var d = new Date(ts);
+    return (d.getMonth()+1) + "/" + d.getDate();
+  }
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function balance(){
+    var sum = 0;
+    for (var i=0;i<state.ledger.length;i++) sum += state.ledger[i].delta;
+    return sum;
+  }
+  function toast(msg){
+    var el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function(){ el.classList.remove("show"); }, 2000);
+  }
+  function sanitize(parsed){
+    var s = Object.assign({}, JSON.parse(JSON.stringify(DEFAULT)), parsed);
+    if (!Array.isArray(s.tasks)) s.tasks = [];
+    if (!Array.isArray(s.wishlist)) s.wishlist = [];
+    if (!Array.isArray(s.ledger)) s.ledger = [];
+    if (typeof s.done !== "object" || s.done === null || Array.isArray(s.done)) s.done = {};
+    return s;
+  }
+
+  /* 图片压缩：最长边 360px，JPEG。控制体积以适配存储上限 */
+  function compressImage(file){
+    return new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onerror = function(){ reject(new Error("read fail")); };
+      reader.onload = function(){
+        var img = new Image();
+        img.onerror = function(){ reject(new Error("img fail")); };
+        img.onload = function(){
+          var MAX = 360;
+          var w = img.width, h = img.height;
+          if (w > h && w > MAX){ h = Math.round(h * MAX / w); w = MAX; }
+          else if (h >= w && h > MAX){ w = Math.round(w * MAX / h); h = MAX; }
+          var canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          var out = canvas.toDataURL("image/jpeg", 0.72);
+          if (out.length > 220000) out = canvas.toDataURL("image/jpeg", 0.5);
+          resolve(out);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /* ---------- 读写 ---------- */
+  async function load(){
+    await detectBackend();
+    try{
+      var json = await rawGet();
+      state = json ? sanitize(JSON.parse(json)) : JSON.parse(JSON.stringify(DEFAULT));
+    }catch(e){
+      state = JSON.parse(JSON.stringify(DEFAULT));
+    }
+    if (backend === "memory"){
+      showBanner("当前环境不支持自动保存，数据只在本页面有效。请在使用结束前点底部「导出备份」，下次打开后「导入备份」即可恢复。");
+    } else {
+      try{ await rawSet(JSON.stringify(state)); }
+      catch(e){
+        backend = "memory";
+        showBanner("自动保存失败，请使用底部「导出备份」手动保存数据。");
+      }
+    }
+  }
+
+  var saving = false, savePending = false;
+  async function save(){
+    if (backend === "memory") return;
+    if (saving){ savePending = true; return; }
+    saving = true;
+    try{
+      var keys = Object.keys(state.done).sort();
+      while (keys.length > 60){ delete state.done[keys.shift()]; }
+      if (state.ledger.length > 500) state.ledger = state.ledger.slice(-500);
+      await rawSet(JSON.stringify(state));
+    }catch(e){
+      toast("保存失败，图片可能过多，建议删除部分旧心愿的图片");
+    }finally{
+      saving = false;
+      if (savePending){ savePending = false; save(); }
+    }
+  }
+
+  /* ---------- 备份 ---------- */
+  document.getElementById("exportBtn").addEventListener("click", function(){
+    var blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "wish-bank-backup-" + todayKey() + ".json";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    toast("已导出");
+  });
+
+  document.getElementById("importBtn").addEventListener("click", function(){
+    document.getElementById("importFile").click();
+  });
+  document.getElementById("importFile").addEventListener("change", function(){
+    var f = this.files && this.files[0];
+    this.value = "";
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        var parsed = JSON.parse(reader.result);
+        if (!parsed || (!parsed.ledger && !parsed.tasks)) throw new Error("bad");
+        if (!confirm("导入将覆盖当前数据，确定？")) return;
+        state = sanitize(parsed);
+        save(); renderAll();
+        toast("已导入");
+      }catch(e){
+        toast("文件格式不正确");
+      }
+    };
+    reader.readAsText(f);
+  });
+
+  /* ---------- 渲染 ---------- */
+  var editMode = false;
+  var pendingWishImg = null;      // 新心愿待用图片
+  var imgTargetWishId = null;     // 正在为哪个已有心愿换图
+
+  function renderHeader(){
+    var bal = balance();
+    document.getElementById("balanceNum").textContent = bal;
+    var goalLine = document.getElementById("goalLine");
+    var bar = document.getElementById("goalBar");
+    var fill = document.getElementById("goalFill");
+
+    var active = state.wishlist.filter(function(w){ return !w.redeemedAt; })
+                               .sort(function(a,b){ return a.cost - b.cost; });
+    if (active.length === 0){
+      goalLine.textContent = "";
+      bar.hidden = true;
+      return;
+    }
+    var g = active[0];
+    var pct = Math.min(100, Math.round(bal / g.cost * 100));
+    if (bal >= g.cost){
+      goalLine.innerHTML = "「<b>" + esc(g.name) + "</b>」已攒够";
+    } else {
+      goalLine.innerHTML = "「<b>" + esc(g.name) + "</b>」还差 " + (g.cost - bal) + " 点";
+    }
+    bar.hidden = false;
+    fill.style.width = pct + "%";
+  }
+
+  function renderTasks(){
+    var box = document.getElementById("taskList");
+    var doneToday = state.done[todayKey()] || [];
+    if (state.tasks.length === 0){
+      box.innerHTML = '<div class="empty">暂无任务</div>';
+      return;
+    }
+    box.innerHTML = state.tasks.map(function(t){
+      var isDone = doneToday.indexOf(t.id) !== -1;
+      return '<div class="task' + (isDone ? " done" : "") + '">' +
+        '<input type="checkbox" data-tid="' + t.id + '"' + (isDone ? " checked" : "") + ' aria-label="完成 ' + esc(t.name) + '">' +
+        '<span class="t-name">' + esc(t.name) + '</span>' +
+        '<span class="pts">+' + t.points + '</span>' +
+        (editMode ? '<button class="del-btn" data-deltask="' + t.id + '" aria-label="删除任务">✕</button>' : '') +
+      '</div>';
+    }).join("");
+  }
+
+  function renderWishes(){
+    var box = document.getElementById("wishList");
+    if (state.wishlist.length === 0){
+      box.innerHTML = '<div class="empty">暂无心愿</div>';
+      return;
+    }
+    var bal = balance();
+    var list = state.wishlist.slice().sort(function(a,b){
+      if (!!a.redeemedAt !== !!b.redeemedAt) return a.redeemedAt ? 1 : -1;
+      return a.cost - b.cost;
+    });
+    box.innerHTML = list.map(function(w){
+      var right;
+      if (w.redeemedAt){
+        right = '<span class="tag-done">已兑换 ' + fmtDate(w.redeemedAt) + '</span>';
+      } else if (bal >= w.cost){
+        right = '<button class="redeem-btn ready" data-redeem="' + w.id + '">兑换</button>';
+      } else {
+        right = '<button class="redeem-btn locked" disabled>还差' + (w.cost - bal) + '点</button>';
+      }
+      var thumb = w.img
+        ? '<button class="w-thumb" data-imgwish="' + w.id + '" aria-label="更换图片"><img src="' + w.img + '" alt=""></button>'
+        : '<button class="w-thumb placeholder" data-imgwish="' + w.id + '" aria-label="添加图片">+</button>';
+      return '<div class="wish' + (w.redeemedAt ? " redeemed" : "") + '">' +
+        thumb +
+        '<div class="w-body"><div class="w-name">' + esc(w.name) + '</div>' +
+        '<div class="w-sub">' + w.cost + ' 点</div></div>' +
+        right +
+        '<button class="del-btn" data-delwish="' + w.id + '" aria-label="删除心愿">✕</button>' +
+      '</div>';
+    }).join("");
+  }
+
+  function renderLog(){
+    var box = document.getElementById("logList");
+    if (state.ledger.length === 0){
+      box.innerHTML = '<div class="empty">暂无记录</div>';
+      return;
+    }
+    var recent = state.ledger.slice(-30).reverse();
+    box.innerHTML = recent.map(function(l){
+      var cls = l.delta >= 0 ? "plus" : "minus";
+      var sign = l.delta >= 0 ? "+" : "";
+      return '<div class="log">' +
+        '<span class="l-label">' + esc(l.label) + '</span>' +
+        '<span class="l-date">' + fmtDate(l.ts) + '</span>' +
+        '<span class="l-delta ' + cls + '">' + sign + l.delta + '</span>' +
+      '</div>';
+    }).join("");
+  }
+
+  function renderAll(){
+    document.getElementById("todayLabel").textContent = todayKey().slice(5).replace("-","/");
+    renderHeader();
+    renderTasks();
+    renderWishes();
+    renderLog();
+  }
+
+  /* ---------- 任务交互 ---------- */
+  document.getElementById("taskList").addEventListener("change", function(e){
+    var cb = e.target;
+    if (!cb.matches("input[type=checkbox]")) return;
+    var tid = cb.getAttribute("data-tid");
+    var task = state.tasks.find(function(t){ return t.id === tid; });
+    if (!task) return;
+    var key = todayKey();
+    if (!state.done[key]) state.done[key] = [];
+    var arr = state.done[key];
+
+    if (cb.checked){
+      if (arr.indexOf(tid) === -1){
+        arr.push(tid);
+        state.ledger.push({id:uid(), ts:Date.now(), label:task.name, delta:task.points});
+        toast("+" + task.points + " 点");
+      }
+    } else {
+      var idx = arr.indexOf(tid);
+      if (idx !== -1){
+        arr.splice(idx, 1);
+        state.ledger.push({id:uid(), ts:Date.now(), label:"撤销：" + task.name, delta:-task.points});
+      }
+    }
+    save(); renderAll();
+  });
+
+  document.getElementById("taskList").addEventListener("click", function(e){
+    var btn = e.target.closest("[data-deltask]");
+    if (!btn) return;
+    var tid = btn.getAttribute("data-deltask");
+    var task = state.tasks.find(function(t){ return t.id === tid; });
+    if (!task) return;
+    if (!confirm("删除任务「" + task.name + "」？（已获得的点数保留）")) return;
+    state.tasks = state.tasks.filter(function(t){ return t.id !== tid; });
+    save(); renderAll();
+  });
+
+  document.getElementById("toggleTaskEdit").addEventListener("click", function(){
+    editMode = !editMode;
+    this.textContent = editMode ? "完成编辑" : "编辑任务";
+    document.getElementById("taskAddRow").hidden = !editMode;
+    renderTasks();
+  });
+
+  document.getElementById("addTaskBtn").addEventListener("click", function(){
+    var nameEl = document.getElementById("newTaskName");
+    var ptsEl = document.getElementById("newTaskPts");
+    var name = nameEl.value.trim();
+    var pts = parseInt(ptsEl.value, 10);
+    if (!name){ toast("请填写任务名称"); return; }
+    if (!(pts >= 1)){ toast("点数至少为 1"); return; }
+    state.tasks.push({id:uid(), name:name, points:Math.min(pts, 99)});
+    nameEl.value = ""; ptsEl.value = "";
+    save(); renderAll();
+  });
+
+  /* ---------- 心愿图片 ---------- */
+  var newWishImgBtn = document.getElementById("newWishImgBtn");
+  var wishImgFile = document.getElementById("wishImgFile");
+
+  newWishImgBtn.addEventListener("click", function(){
+    imgTargetWishId = null;   // 表示这张图给"待添加"的新心愿
+    wishImgFile.click();
+  });
+
+  wishImgFile.addEventListener("change", function(){
+    var f = this.files && this.files[0];
+    this.value = "";
+    if (!f) return;
+    compressImage(f).then(function(dataUrl){
+      if (imgTargetWishId){
+        var w = state.wishlist.find(function(x){ return x.id === imgTargetWishId; });
+        if (w){ w.img = dataUrl; save(); renderAll(); toast("图片已更新"); }
+        imgTargetWishId = null;
+      } else {
+        pendingWishImg = dataUrl;
+        newWishImgBtn.innerHTML = '<img src="' + dataUrl + '" alt="">';
+      }
+    }).catch(function(){
+      toast("图片读取失败");
+    });
+  });
+
+  /* ---------- 心愿交互 ---------- */
+  document.getElementById("addWishBtn").addEventListener("click", function(){
+    var nameEl = document.getElementById("newWishName");
+    var costEl = document.getElementById("newWishCost");
+    var name = nameEl.value.trim();
+    var cost = parseInt(costEl.value, 10);
+    if (!name){ toast("请填写心愿名称"); return; }
+    if (!(cost >= 1)){ toast("请填写点数"); return; }
+    state.wishlist.push({
+      id:uid(), name:name, cost:Math.min(cost, 9999),
+      addedAt:Date.now(), redeemedAt:null,
+      img: pendingWishImg || null
+    });
+    nameEl.value = ""; costEl.value = "";
+    pendingWishImg = null;
+    newWishImgBtn.innerHTML = "+";
+    save(); renderAll();
+  });
+
+  document.getElementById("wishList").addEventListener("click", function(e){
+    var iBtn = e.target.closest("[data-imgwish]");
+    if (iBtn){
+      imgTargetWishId = iBtn.getAttribute("data-imgwish");
+      wishImgFile.click();
+      return;
+    }
+    var rBtn = e.target.closest("[data-redeem]");
+    if (rBtn){
+      var wid = rBtn.getAttribute("data-redeem");
+      var w = state.wishlist.find(function(x){ return x.id === wid; });
+      if (!w || w.redeemedAt) return;
+      if (balance() < w.cost){ toast("点数不足"); return; }
+      if (!confirm("用 " + w.cost + " 点兑换「" + w.name + "」？")) return;
+      w.redeemedAt = Date.now();
+      state.ledger.push({id:uid(), ts:Date.now(), label:"兑换：" + w.name, delta:-w.cost});
+      save(); renderAll();
+      toast("兑换成功");
+      return;
+    }
+    var dBtn = e.target.closest("[data-delwish]");
+    if (dBtn){
+      var wid2 = dBtn.getAttribute("data-delwish");
+      var w2 = state.wishlist.find(function(x){ return x.id === wid2; });
+      if (!w2) return;
+      if (!confirm("删除心愿「" + w2.name + "」？")) return;
+      state.wishlist = state.wishlist.filter(function(x){ return x.id !== wid2; });
+      save(); renderAll();
+    }
+  });
+
+  document.getElementById("newWishCost").addEventListener("keydown", function(e){
+    if (e.key === "Enter") document.getElementById("addWishBtn").click();
+  });
+  document.getElementById("newTaskPts").addEventListener("keydown", function(e){
+    if (e.key === "Enter") document.getElementById("addTaskBtn").click();
+  });
+
+  setInterval(function(){
+    var label = document.getElementById("todayLabel").textContent;
+    var nowLabel = todayKey().slice(5).replace("-","/");
+    if (label !== nowLabel) renderAll();
+  }, 60000);
+
+  load().then(renderAll);
+})();
+</script>
+</body>
+</html>
